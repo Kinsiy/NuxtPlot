@@ -21,14 +21,31 @@ const plotContainer = ref<HTMLDivElement | null>(null)
 const { width } = useElementSize(plotContainer)
 
 function render(width: number, range: number[], figure = true) {
-  const barY = Plot.barY(data, {
+  const line = Plot.lineY(data, {
     fx: 'state',
     x: 'age',
     y: 'population',
-    fill: 'age',
-
+    marker: true,
+    stroke: '#0ea5e9',
     tip: true,
-    // sort: { color: null, x: null, fx: { value: "-y", reduce: "sum" } }
+    sort: {
+      x: {
+        value: 'x',
+        order(a: typeof data[0]['age'], b: typeof data[0]['age']) {
+          const order = Array.from({ length: 9 }, (_, idx) => {
+            switch (idx) {
+              case 0:
+                return '<10'
+              case 8:
+                return '≥80'
+              default:
+                return `${idx}0-${idx}9`
+            }
+          })
+          return order.indexOf(a[0]) - order.indexOf(b[0])
+        },
+      },
+    },
   })
 
   const axisY = Plot.axisY({
@@ -40,11 +57,13 @@ function render(width: number, range: number[], figure = true) {
   return Plot.plot({
     width,
     x: {
-      axis: null,
+      // axis: null,
+      label: null,
     },
     fx: {
       label: null,
       range,
+      // labelAnchor: 'bottom',
       round: false, // Important !, if set to true, it will cause the y-axis to jitter
     },
     color: {
@@ -53,7 +72,7 @@ function render(width: number, range: number[], figure = true) {
     },
     figure,
     marks: [
-      barY,
+      line,
       Plot.ruleY([0]),
       axisY,
     ],

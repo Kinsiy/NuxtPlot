@@ -22,12 +22,11 @@ const { width } = useElementSize(plotContainer)
 
 function render(width: number, range: number[], figure = true) {
   const line = Plot.lineY(data, {
-    fx: 'state',
     x: 'age',
     y: 'population',
     marker: true,
-    stroke: '#0ea5e9',
-    tip: 'x',
+    stroke: 'state',
+    tip: 'xy',
     sort: {
       x: {
         value: 'x',
@@ -50,8 +49,6 @@ function render(width: number, range: number[], figure = true) {
 
   const axisY = Plot.axisY({
     tickFormat: 's',
-    labelOffset: range[0],
-    dx: Math.abs(range[0] - 40),
   })
 
   return Plot.plot({
@@ -59,15 +56,11 @@ function render(width: number, range: number[], figure = true) {
     x: {
       // axis: null,
       label: null,
-    },
-    fx: {
-      label: null,
       range,
-      // labelAnchor: 'bottom',
       round: false, // Important !, if set to true, it will cause the y-axis to jitter
     },
     color: {
-      scheme: 'spectral',
+      scheme: 'Observable10',
       legend: true,
     },
     figure,
@@ -85,6 +78,7 @@ function insertZoomedPlot(
   range: number[],
 ) {
   const chart = render(width, range, false)
+  // console.log(chart.scale('x')?.range, range)
   container.html('').append(() => chart)
   return chart
 }

@@ -16,7 +16,7 @@
     "@observablehq/plot": "^0.6.16",
     "@vueuse/core": "^11.3.0",
     "d3": "^7.9.0",
-    "es-toolkit": "^1.27.0",
+    "lodash-es": "^4.17.21",
     "nuxt": "^3.14.1592",
     "vue": "latest",
     "vue-router": "latest"
@@ -25,6 +25,7 @@
     "@antfu/eslint-config": "^3.9.2",
     "@nuxtjs/tailwindcss": "^6.12.2",
     "@types/d3": "^7.4.3",
+    "@types/lodash-es": "^4.17.12",
     "eslint": "^9.15.0",
     "eslint-plugin-format": "^0.1.2"
   }

@@ -11,6 +11,7 @@
 import * as Plot from '@observablehq/plot'
 import { useElementSize } from '@vueuse/core'
 import * as d3 from 'd3'
+import { debounce } from 'es-toolkit'
 import { onMounted, ref } from 'vue'
 import data from '~/mock/data'
 
@@ -19,7 +20,7 @@ import data from '~/mock/data'
 const plotContainer = ref<HTMLDivElement | null>(null)
 const { width } = useElementSize(plotContainer)
 
-function renderPlot(width: number, range: number[], figure = true) {
+function renderBarY(width: number, range: number[], figure = true) {
   const barY = Plot.barY(data, {
     fx: 'state',
     x: 'age',
@@ -41,27 +42,30 @@ function renderPlot(width: number, range: number[], figure = true) {
     x: {
       axis: null,
     },
-    fx: { label: null, range },
+    fx: {
+      label: null,
+      range,
+      round: false, // Important !, if set to true, it will cause the y-axis to jitter
+    },
     color: {
       scheme: 'spectral',
       legend: true,
     },
+    figure,
     marks: [
       barY,
       Plot.ruleY([0]),
       axisY,
     ],
-    figure,
   })
 }
 
-function insertPlot(
-  container: d3.Selection<SVGGElement, undefined, null, undefined>,
+function insertZoomedPlot(
+  container: d3.Selection<HTMLDivElement, any, any, any>,
   width: number,
   range: number[],
 ) {
-  const chart = renderPlot(width, range, false)
-  // console.log(chart)
+  const chart = renderBarY(width, range, false)
   container.html('').append(() => chart)
   return chart
 }
@@ -72,45 +76,52 @@ onMounted(() => {
     return
   }
 
-  const g = d3.create<SVGGElement>('svg:g')
+  const range = [40, width.value - 20]
+  // console.log(range)
+  const barY = renderBarY(width.value, range)
+  const figure = d3.select(barY)
+  const svg = figure.select<SVGSVGElement>('figure > svg')
 
-  const figure = renderPlot(width.value, [40, width.value - 20])
-  const plotSvg = d3.select(figure).select<SVGSVGElement>('figure > svg')
+  const div = figure.append('div') // cannot use svg elements, which will cause the tooltip to fail.
+  div.append(() => svg.node())
 
-  const zoomedSvg = d3
-    .select(figure)
-    .insert<SVGSVGElement>(() => plotSvg.clone().node()!, () => plotSvg.node())
-    .attr('class', '')
+  const hideTip = (tip: d3.Selection<SVGGElement, any, any, any>) => {
+    tip.style('display', 'none')
+  }
 
-  zoomedSvg
-    .append(() => g.node())
-    .append<SVGGElement>(() => plotSvg.node()!)
+  const showTip = debounce((tip: d3.Selection<SVGGElement, any, any, any>) => {
+    tip.style('display', 'unset')
+  }, 100)
 
-  const zoomed = (e: d3.D3ZoomEvent<SVGGElement, undefined>) => {
-    const newRange = [40, width.value - 20].map(r => e.transform.applyX(r))
-    newRange[0] = d3.min([newRange[0], 40])!
-    newRange[1] = d3.max([newRange[1], width.value - 20])!
+  const zoomed = (e: d3.D3ZoomEvent<HTMLDivElement, any>) => {
+    // console.log(e.transform)
+    const zoomedRange = range.map(r => e.transform.applyX(r))
+    zoomedRange[0] = Math.min(zoomedRange[0], range[0])
+    zoomedRange[1] = Math.max(zoomedRange[1], range[1])
+    const zoomedPlot = insertZoomedPlot(div, width.value, zoomedRange)
 
-    const chart = d3.select(insertPlot(g, width.value, newRange))
+    const chart = d3.select(zoomedPlot)
+    const tip = chart.select<SVGGElement>('[aria-label="tip"]')
+    hideTip(tip)
+    showTip(tip)
 
     const rect = chart.insert<SVGRectElement>(
       'svg:rect',
       '[aria-label="y-axis tick"]',
     )
     rect
-      .attr('width', 40)
+      .attr('width', range[0])
       .attr('height', chart.attr('height'))
       .attr('fill', 'white')
   }
 
   const zoom = d3
-    .zoom<SVGSVGElement, unknown>()
+    .zoom<HTMLDivElement, any>()
     .scaleExtent([1, 20])
     .translateExtent([[0, 0], [width.value, 0]])
     .on('zoom', zoomed)
 
-  zoomedSvg.call(zoom)
-
-  container.append(() => figure)
+  div.call(zoom)
+  container.append(() => figure.node())
 })
 </script>

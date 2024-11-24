@@ -1,7 +1,7 @@
 <template>
-  <div class=" flex flex-col gap-2">
+  <div class=" grid grid-cols-2 gap-2">
     <PlotBarY />
-    <PlotLineY />
     <PlotMultiSeriesLine />
+    <PlotLineY class=" col-span-2" />
   </div>
 </template>

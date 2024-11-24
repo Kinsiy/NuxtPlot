@@ -39,5 +39,6 @@ export default antfu({
       ignoreHTMLAttributeValues: false,
       ignoreHTMLTextContents: false,
     }],
+    'antfu/if-newline': 0,
   },
 })
